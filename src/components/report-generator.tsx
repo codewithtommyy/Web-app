@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { downloadCsvReport, downloadPdfReport } from "@/lib/report-export";
 import { prepareUrls } from "@/lib/report-validation";
-import type { ReportItem, ReportResponse, ReportRunRecord } from "@/types/report";
+import {
+  createSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/client";
+import type { CrawlHistoryRecord, ReportItem, ReportResponse } from "@/types/report";
 import { MAX_URLS } from "@/types/report";
 
 const SAMPLE_INPUT = [
@@ -12,7 +16,6 @@ const SAMPLE_INPUT = [
   "https://example.com/article-two",
 ].join("\n");
 
-const HISTORY_STORAGE_KEY = "pr-report-generator-history-items";
 const HISTORY_LIMIT = 10;
 
 export function ReportGenerator() {
@@ -21,7 +24,11 @@ export function ReportGenerator() {
   const [formError, setFormError] = useState("");
   const [apiError, setApiError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [history, setHistory] = useState<ReportRunRecord[]>(getInitialHistory);
+  const [history, setHistory] = useState<CrawlHistoryRecord[]>([]);
+  const [historyNotice, setHistoryNotice] = useState("");
+  const [historyError, setHistoryError] = useState("");
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const supabaseConfigured = isSupabaseConfigured();
   const rawLines = input
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -39,7 +46,46 @@ export function ReportGenerator() {
   const successfulCount = items.filter((item) => item.status === "success").length;
   const failedCount = items.length - successfulCount;
   const uniqueCategories = new Set(items.map((item) => item.category).filter(Boolean)).size;
-  const historyNotice = history.length > 0 ? "Latest crawl saved to local history." : "No crawl history yet.";
+
+  useEffect(() => {
+    if (!supabaseConfigured) {
+      return;
+    }
+
+    void loadHistory();
+  }, [supabaseConfigured]);
+
+  async function loadHistory() {
+    const supabase = createSupabaseBrowserClient();
+
+    if (!supabase) {
+      setHistory([]);
+      setHistoryNotice("Supabase history is not configured yet.");
+      return;
+    }
+
+    setIsHistoryLoading(true);
+    setHistoryError("");
+
+    const { data, error } = await supabase
+      .from("crawl_history")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(HISTORY_LIMIT);
+
+    if (error) {
+      setHistory([]);
+      setHistoryError(error.message);
+      setHistoryNotice("");
+      setIsHistoryLoading(false);
+      return;
+    }
+
+    const records = (data ?? []) as CrawlHistoryRecord[];
+    setHistory(records);
+    setHistoryNotice(records.length > 0 ? "" : "No crawl history yet.");
+    setIsHistoryLoading(false);
+  }
 
   const handleGenerateReport = async () => {
     const prepared = prepareUrls(input);
@@ -72,7 +118,7 @@ export function ReportGenerator() {
       }
 
       setItems(data.items);
-      saveHistory(data.items);
+      await saveHistory(data.items);
     } catch {
       setItems([]);
       setApiError("Network error while generating report.");
@@ -81,26 +127,32 @@ export function ReportGenerator() {
     }
   };
 
-  function saveHistory(nextItems: ReportItem[]) {
-    const historyItems = nextItems.map((item) => ({
-      id: crypto.randomUUID(),
-      user_id: "local-browser-history",
-      total_urls: 1,
-      successful_count: item.status === "success" ? 1 : 0,
-      failed_count: item.status === "failed" ? 1 : 0,
-      categories: item.category ? [item.category] : [],
-      items: [item],
-      created_at: item.crawledAt || new Date().toISOString(),
-    }));
+  async function saveHistory(nextItems: ReportItem[]) {
+    const supabase = createSupabaseBrowserClient();
 
-    const nextHistory = [...historyItems, ...history].slice(0, HISTORY_LIMIT);
-    setHistory(nextHistory);
-
-    try {
-      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
-    } catch {
+    if (!supabaseConfigured || !supabase) {
+      setHistoryNotice("Supabase history is not configured yet.");
       return;
     }
+
+    const payload = nextItems.map((item) => ({
+      url: item.url,
+      domain: item.domain || "",
+      title: item.title || "Untitled article",
+      category: item.category || "Uncategorized",
+      status: item.status,
+      crawled_at: item.crawledAt || new Date().toISOString(),
+    }));
+
+    const { error } = await supabase.from("crawl_history").insert(payload);
+
+    if (error) {
+      setHistoryError(`Report generated, but history save failed: ${error.message}`);
+      return;
+    }
+
+    setHistoryNotice("Latest crawl saved to Supabase history.");
+    await loadHistory();
   }
 
   return (
@@ -342,37 +394,43 @@ export function ReportGenerator() {
               <div>
                 <h2 className="text-xl font-semibold text-slate-950">Crawl History</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  The 10 most recent crawled articles saved locally in this browser.
+                  The 10 most recent crawled articles loaded from Supabase.
                 </p>
               </div>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                Local history
+                Live history
               </span>
             </div>
           </div>
 
           <div className="px-6 py-5">
-            {history.length === 0 ? (
+            {!supabaseConfigured ? (
+              <p className="text-sm text-slate-500">
+                Supabase is not configured yet, so crawl history cannot load.
+              </p>
+            ) : isHistoryLoading ? (
+              <p className="text-sm text-slate-500">Loading crawl history...</p>
+            ) : history.length === 0 ? (
               <p className="text-sm text-slate-500">{historyNotice || "No crawl history yet."}</p>
             ) : (
               <div className="grid gap-4">
-                {history.map((run) => (
+                {history.map((record) => (
                   <article
-                    key={run.id}
+                    key={record.id}
                     className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-slate-950">
-                        {run.items[0]?.title || "Untitled article"}
+                        {record.title || "Untitled article"}
                       </p>
                       <p className="text-sm text-slate-500">
-                        {formatDateTime(run.created_at)}
+                        {formatDateTime(record.crawled_at || record.created_at)}
                       </p>
                     </div>
 
                     <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <p className="break-all text-sm leading-7 text-slate-900">
-                        {run.items[0]?.url || "-"}
+                        {record.url || "-"}
                       </p>
                     </div>
                   </article>
@@ -380,7 +438,8 @@ export function ReportGenerator() {
               </div>
             )}
 
-            {history.length > 0 && historyNotice ? (
+            {historyError ? <p className="mt-4 text-sm text-rose-600">{historyError}</p> : null}
+            {!historyError && history.length > 0 && historyNotice ? (
               <p className="mt-4 text-sm text-emerald-700">{historyNotice}</p>
             ) : null}
           </div>
@@ -441,23 +500,4 @@ function formatDateTime(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function getInitialHistory() {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY);
-
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as ReportRunRecord[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }

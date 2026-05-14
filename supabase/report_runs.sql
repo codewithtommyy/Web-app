@@ -1,38 +1,33 @@
 create extension if not exists "pgcrypto";
 
-create table if not exists public.report_runs (
+create table if not exists public.crawl_history (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  total_urls integer not null default 0,
-  successful_count integer not null default 0,
-  failed_count integer not null default 0,
-  categories text[] not null default '{}',
-  items jsonb not null default '[]'::jsonb,
+  url text not null,
+  domain text not null default '',
+  title text not null default '',
+  category text not null default 'Uncategorized',
+  status text not null check (status in ('success', 'failed')),
+  crawled_at timestamptz not null default timezone('utc', now()),
   created_at timestamptz not null default timezone('utc', now())
 );
 
-create index if not exists report_runs_user_id_created_at_idx
-  on public.report_runs (user_id, created_at desc);
+create index if not exists crawl_history_created_at_idx
+  on public.crawl_history (created_at desc);
 
-alter table public.report_runs enable row level security;
+alter table public.crawl_history enable row level security;
 
-drop policy if exists "Users can view their own report runs" on public.report_runs;
-create policy "Users can view their own report runs"
-  on public.report_runs
+grant select, insert on public.crawl_history to anon, authenticated;
+
+drop policy if exists "Public users can view crawl history" on public.crawl_history;
+create policy "Public users can view crawl history"
+  on public.crawl_history
   for select
-  to authenticated
-  using ((select auth.uid()) = user_id);
+  to anon, authenticated
+  using (true);
 
-drop policy if exists "Users can insert their own report runs" on public.report_runs;
-create policy "Users can insert their own report runs"
-  on public.report_runs
+drop policy if exists "Public users can insert crawl history" on public.crawl_history;
+create policy "Public users can insert crawl history"
+  on public.crawl_history
   for insert
-  to authenticated
-  with check ((select auth.uid()) = user_id);
-
-drop policy if exists "Users can delete their own report runs" on public.report_runs;
-create policy "Users can delete their own report runs"
-  on public.report_runs
-  for delete
-  to authenticated
-  using ((select auth.uid()) = user_id);
+  to anon, authenticated
+  with check (true);

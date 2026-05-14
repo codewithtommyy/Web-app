@@ -19,13 +19,13 @@ export type ReportResponse = {
   items: ReportItem[];
 };
 
-export type ReportRunRecord = {
+export type CrawlHistoryRecord = {
   id: string;
-  user_id: string;
-  total_urls: number;
-  successful_count: number;
-  failed_count: number;
-  categories: string[];
-  items: ReportItem[];
+  url: string;
+  domain: string;
+  title: string;
+  category: string;
+  status: ReportStatus;
+  crawled_at: string;
   created_at: string;
 };
