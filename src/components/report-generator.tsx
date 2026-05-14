@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { downloadCsvReport, downloadPdfReport } from "@/lib/report-export";
 import { prepareUrls } from "@/lib/report-validation";
-import type { ReportItem, ReportResponse } from "@/types/report";
+import type { ReportItem, ReportResponse, ReportRunRecord } from "@/types/report";
 import { MAX_URLS } from "@/types/report";
 
 const SAMPLE_INPUT = [
@@ -12,12 +12,16 @@ const SAMPLE_INPUT = [
   "https://example.com/article-two",
 ].join("\n");
 
+const HISTORY_STORAGE_KEY = "pr-report-generator-history-items";
+const HISTORY_LIMIT = 10;
+
 export function ReportGenerator() {
   const [input, setInput] = useState("");
   const [items, setItems] = useState<ReportItem[]>([]);
   const [formError, setFormError] = useState("");
   const [apiError, setApiError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [history, setHistory] = useState<ReportRunRecord[]>(getInitialHistory);
   const rawLines = input
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -35,6 +39,7 @@ export function ReportGenerator() {
   const successfulCount = items.filter((item) => item.status === "success").length;
   const failedCount = items.length - successfulCount;
   const uniqueCategories = new Set(items.map((item) => item.category).filter(Boolean)).size;
+  const historyNotice = history.length > 0 ? "Latest crawl saved to local history." : "No crawl history yet.";
 
   const handleGenerateReport = async () => {
     const prepared = prepareUrls(input);
@@ -67,6 +72,7 @@ export function ReportGenerator() {
       }
 
       setItems(data.items);
+      saveHistory(data.items);
     } catch {
       setItems([]);
       setApiError("Network error while generating report.");
@@ -74,6 +80,28 @@ export function ReportGenerator() {
       setIsGenerating(false);
     }
   };
+
+  function saveHistory(nextItems: ReportItem[]) {
+    const historyItems = nextItems.map((item) => ({
+      id: crypto.randomUUID(),
+      user_id: "local-browser-history",
+      total_urls: 1,
+      successful_count: item.status === "success" ? 1 : 0,
+      failed_count: item.status === "failed" ? 1 : 0,
+      categories: item.category ? [item.category] : [],
+      items: [item],
+      created_at: item.crawledAt || new Date().toISOString(),
+    }));
+
+    const nextHistory = [...historyItems, ...history].slice(0, HISTORY_LIMIT);
+    setHistory(nextHistory);
+
+    try {
+      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
+    } catch {
+      return;
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),linear-gradient(180deg,_#f8fbff_0%,_#eef5fb_46%,_#f7f4ed_100%)] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
@@ -119,7 +147,7 @@ export function ReportGenerator() {
                 <button
                   type="button"
                   onClick={() => setInput(SAMPLE_INPUT)}
-                  className="rounded-full border border-white/15 bg-white/6 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-white/30 hover:bg-white/10"
+                  className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-white/30 hover:bg-white/10"
                 >
                   Use sample
                 </button>
@@ -307,6 +335,56 @@ export function ReportGenerator() {
             </table>
           </div>
         </section>
+
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_60px_rgba(15,23,42,0.08)]">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-950">Crawl History</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  The 10 most recent crawled articles saved locally in this browser.
+                </p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                Local history
+              </span>
+            </div>
+          </div>
+
+          <div className="px-6 py-5">
+            {history.length === 0 ? (
+              <p className="text-sm text-slate-500">{historyNotice || "No crawl history yet."}</p>
+            ) : (
+              <div className="grid gap-4">
+                {history.map((run) => (
+                  <article
+                    key={run.id}
+                    className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-950">
+                        {run.items[0]?.title || "Untitled article"}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {formatDateTime(run.created_at)}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <p className="break-all text-sm leading-7 text-slate-900">
+                        {run.items[0]?.url || "-"}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {history.length > 0 && historyNotice ? (
+              <p className="mt-4 text-sm text-emerald-700">{historyNotice}</p>
+            ) : null}
+          </div>
+        </section>
       </div>
     </main>
   );
@@ -334,7 +412,7 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 
 function QueueMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/4 px-3 py-2.5">
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5">
       <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-semibold text-white">{value}</p>
     </div>
@@ -354,4 +432,32 @@ function StatusBadge({ status }: { status: ReportItem["status"] }) {
       {status}
     </span>
   );
+}
+
+function formatDateTime(value: string) {
+  if (!value) return "-";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function getInitialHistory() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw) as ReportRunRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }

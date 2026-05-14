@@ -18,7 +18,9 @@ Built with Next.js App Router, TypeScript, Tailwind CSS, server-side crawling, `
 - Per-URL success or failure status
 - Export a professional A4 PDF report
 - Export a complete CSV summary
-- Responsive UI, no auth, no database
+- Supabase email/password authentication
+- Supabase-backed per-user report history
+- Responsive UI
 
 ## Tech Stack
 
@@ -39,6 +41,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Supabase Setup
+
+1. Copy `.env.example` to `.env.local`
+2. Fill in:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. In the Supabase SQL editor, run [supabase/report_runs.sql](./supabase/report_runs.sql)
+4. Restart the dev server
+
+This enables:
+
+- Email/password sign-in and sign-up
+- Per-user saved report history with RLS
+
 ## Production Build
 
 ```bash
@@ -55,7 +71,8 @@ npm run start
 5. Output setting: default Next.js output
 6. Deploy with the default settings.
 
-No environment variables are required for the current version.
+For crawl-only usage, no environment variables are required.
+For auth and saved history, Supabase env variables are required.
 
 ## API
 
