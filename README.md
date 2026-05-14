@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PR Report Generator
 
-## Getting Started
+Production-ready web app for crawling up to 5 PR article URLs per run and exporting:
 
-First, run the development server:
+- A polished PDF report
+- A full CSV summary
+
+Built with Next.js App Router, TypeScript, Tailwind CSS, server-side crawling, `cheerio`, `jsPDF`, `jspdf-autotable`, and `papaparse`.
+
+## Features
+
+- Paste URLs one per line
+- Remove empty lines automatically
+- Deduplicate URLs before crawling
+- Validate URL format
+- Reject more than 5 URLs per report
+- Crawl on the server via `POST /api/report`
+- Per-URL success or failure status
+- Export a professional A4 PDF report
+- Export a complete CSV summary
+- Responsive UI, no auth, no database
+
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Cheerio
+- jsPDF
+- jspdf-autotable
+- Papa Parse
+
+## Local Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Push the project to GitHub.
+2. Import the repository into [Vercel](https://vercel.com/).
+3. Framework preset should auto-detect as `Next.js`.
+4. Build command: `npm run build`
+5. Output setting: default Next.js output
+6. Deploy with the default settings.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+No environment variables are required for the current version.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API
 
-## Deploy on Vercel
+### `POST /api/report`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Request:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```json
+{
+  "urls": ["https://example.com/article"]
+}
+```
+
+Response:
+
+```json
+{
+  "items": [
+    {
+      "url": "https://example.com/article",
+      "domain": "example.com",
+      "title": "Article title",
+      "category": "News",
+      "description": "Article summary",
+      "author": "Author name",
+      "publishedTime": "2026-05-14T10:00:00Z",
+      "status": "success",
+      "error": "",
+      "crawledAt": "2026-05-14T10:05:00Z"
+    }
+  ]
+}
+```
+
+## Crawl Rules
+
+- Max 5 URLs per request
+- 12-second timeout per URL
+- Server-side fetching to avoid CORS issues
+- Parallel processing with `Promise.allSettled`
+
+## Notes
+
+- Some sites may block automated requests or omit metadata tags.
+- Failed URLs still appear in the result table and exported files.

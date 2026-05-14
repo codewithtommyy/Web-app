@@ -1,0 +1,5 @@
+No,URL,Domain,Title,Category,Description,Author,Published Time,Status,Error,Crawled At
+1,https://example.com/press/acme-series-a,example.com,Acme Raises Series A to Expand APAC Market,Funding News,Acme announces a new funding round and regional expansion plan across Southeast Asia.,Editorial Team,2026-05-12T08:30:00Z,success,,2026-05-14T09:32:10Z
+2,https://media.brandsite.com/news/product-launch-neo-platform,media.brandsite.com,Neo Platform Launches AI Workflow Suite for Enterprise Teams,Product Launch,"The launch focuses on productivity automation, governance, and multi-market rollout.",Brandsite Newsroom,2026-05-13T03:15:00Z,success,,2026-05-14T09:32:18Z
+3,https://startupworld.io/pr/greenloop-partnership,startupworld.io,GreenLoop Signs Strategic Distribution Partnership in Vietnam,Partnerships,GreenLoop enters a strategic partnership to expand distribution coverage in Vietnam.,Mai Tran,2026-05-10T14:45:00Z,success,,2026-05-14T09:32:24Z
+4,https://news.unknown-site.test/post/missing-meta,news.unknown-site.test,,Uncategorized,,,,failed,Request failed with status 403.,2026-05-14T09:32:31Z
