@@ -79,14 +79,14 @@ export function ReportGenerator() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_28%),linear-gradient(180deg,_#f8fbff_0%,_#eef5fb_46%,_#f7f4ed_100%)] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
         <section className="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_80px_rgba(15,23,42,0.10)] backdrop-blur">
-          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:px-10 lg:py-10">
-            <div className="space-y-6">
+          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-9">
+            <div className="space-y-5">
               <div className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
                 PR Report Generator
               </div>
 
               <div className="space-y-3">
-                <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">
+                <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.045em] text-slate-950 sm:text-[3.35rem] sm:leading-[1.02]">
                   Crawl PR article URLs and export a clean reporting pack in minutes.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
@@ -102,7 +102,7 @@ export function ReportGenerator() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200/80 bg-slate-950 p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <div className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,#070b1d_0%,#0b1023_100%)] p-5 text-white shadow-[0_18px_50px_rgba(2,6,23,0.24),inset_0_1px_0_rgba(255,255,255,0.08)]">
               {isGenerating ? (
                 <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/8">
                   <div className="h-full w-1/3 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-emerald-300" />
@@ -112,14 +112,14 @@ export function ReportGenerator() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">Paste PR article URLs, one per line</h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-slate-300">
                     Server-side crawl with clean PDF and CSV export.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setInput(SAMPLE_INPUT)}
-                  className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-white/30 hover:bg-white/10"
+                  className="rounded-full border border-white/15 bg-white/6 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-white/30 hover:bg-white/10"
                 >
                   Use sample
                 </button>
@@ -136,21 +136,24 @@ export function ReportGenerator() {
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   placeholder={"https://news-site.com/pr-article\nhttps://brand-site.com/media/newsroom/post"}
-                  className="min-h-56 w-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] px-4 py-4 font-mono text-sm leading-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] outline-none ring-0 placeholder:text-slate-500 transition focus:border-emerald-400/70 focus:bg-white/10 focus:shadow-[0_0_0_4px_rgba(52,211,153,0.14)]"
+                  className="min-h-56 w-full rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] px-4 py-4 font-mono text-sm leading-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none ring-0 placeholder:text-slate-500 transition focus:border-emerald-400/60 focus:bg-white/8 focus:shadow-[0_0_0_4px_rgba(52,211,153,0.12)]"
                 />
               </label>
 
-              <div className="mt-3 flex flex-col gap-2 text-sm">
+              <div className="mt-4 flex flex-col gap-3 text-sm">
                 <div className="grid gap-2 sm:grid-cols-3">
-                  <QueueMetric label="Queued" value={String(uniqueInputCount)} />
-                  <QueueMetric label="Duplicates removed" value={String(Math.max(duplicateCount, 0))} />
-                  <QueueMetric label="Remaining slots" value={String(remainingSlots)} />
+                  <QueueMetric label="URLs queued" value={String(uniqueInputCount)} />
+                  <QueueMetric
+                    label="Duplicates removed"
+                    value={String(Math.max(duplicateCount, 0))}
+                  />
+                  <QueueMetric label="Slots left" value={String(remainingSlots)} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-slate-300">
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-100">
                     Empty lines removed
                   </span>
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-100">
                     Duplicate URLs merged
                   </span>
                 </div>
@@ -181,19 +184,21 @@ export function ReportGenerator() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-4">
-          <SummaryCard label="Total URLs" value={String(items.length)} />
-          <SummaryCard label="Successful crawls" value={String(successfulCount)} />
-          <SummaryCard label="Failed crawls" value={String(failedCount)} />
-          <SummaryCard label="Unique categories" value={String(uniqueCategories)} />
-        </section>
+        {items.length > 0 ? (
+          <section className="grid gap-4 md:grid-cols-4">
+            <SummaryCard label="Total URLs" value={String(items.length)} />
+            <SummaryCard label="Successful crawls" value={String(successfulCount)} />
+            <SummaryCard label="Failed crawls" value={String(failedCount)} />
+            <SummaryCard label="Unique categories" value={String(uniqueCategories)} />
+          </section>
+        ) : null}
 
         <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_60px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-slate-950">Crawl Results</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Review extracted metadata before exporting. Failed rows remain in PDF and CSV.
+                Review the five export columns before downloading PDF or CSV.
               </p>
             </div>
 
@@ -217,6 +222,12 @@ export function ReportGenerator() {
             </div>
           </div>
 
+          {items.length === 0 ? (
+            <div className="border-b border-slate-100 px-6 py-3 text-sm text-slate-500">
+              Generate a report to enable PDF and CSV exports.
+            </div>
+          ) : null}
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-left">
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -226,14 +237,12 @@ export function ReportGenerator() {
                   <th className="px-4 py-4 font-medium">Title</th>
                   <th className="px-4 py-4 font-medium">Category</th>
                   <th className="px-4 py-4 font-medium">Source Domain</th>
-                  <th className="px-4 py-4 font-medium">Status</th>
-                  <th className="px-4 py-4 font-medium">Crawled At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16">
+                    <td colSpan={5} className="px-4 py-16">
                       <div className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
                         <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                           {isGenerating ? "Crawler Running" : "Ready for Input"}
@@ -286,13 +295,10 @@ export function ReportGenerator() {
                         {item.category || "Uncategorized"}
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-700">
-                        {item.domain || "-"}
-                      </td>
-                      <td className="px-4 py-4 text-sm">
-                        <StatusBadge status={item.status} />
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-500">
-                        {formatDateTime(item.crawledAt)}
+                        <div className="space-y-2">
+                          <p>{item.domain || "-"}</p>
+                          <StatusBadge status={item.status} />
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -328,7 +334,7 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 
 function QueueMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
+    <div className="rounded-2xl border border-white/8 bg-white/4 px-3 py-2.5">
       <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-semibold text-white">{value}</p>
     </div>
@@ -348,13 +354,4 @@ function StatusBadge({ status }: { status: ReportItem["status"] }) {
       {status}
     </span>
   );
-}
-
-function formatDateTime(value: string) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }

@@ -17,11 +17,6 @@ export async function downloadPdfReport(items: ReportItem[]) {
   const autoTable = autoTableModule.default;
   const doc = new jsPDF({ format: "a4", orientation: "portrait", unit: "pt" });
   const generatedAt = new Date();
-  const successfulCount = items.filter((item) => item.status === "success").length;
-  const failedCount = items.length - successfulCount;
-  const uniqueCategories = new Set(
-    items.map((item) => item.category.trim()).filter(Boolean),
-  ).size;
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -44,37 +39,16 @@ export async function downloadPdfReport(items: ReportItem[]) {
     84,
   );
 
-  const cards = [
-    { label: "Total URLs", value: String(items.length) },
-    { label: "Successful", value: String(successfulCount) },
-    { label: "Failed", value: String(failedCount) },
-    { label: "Unique Categories", value: String(uniqueCategories) },
-  ];
-
-  cards.forEach((card, index) => {
-    const x = left + index * 128;
-    doc.setFillColor(244, 247, 251);
-    doc.roundedRect(x, 136, 116, 64, 14, 14, "F");
-    doc.setTextColor(84, 101, 118);
-    doc.setFontSize(9);
-    doc.text(card.label, x + 14, 158);
-    doc.setTextColor(10, 30, 46);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text(card.value, x + 14, 184);
-    doc.setFont("helvetica", "normal");
-  });
-
   autoTable(doc, {
-    startY: 228,
+    startY: 136,
     margin: { left, right: pageWidth - right },
-    head: [["No", "Title", "Category", "Domain", "Status"]],
+    head: [["No.", "URL", "Title", "Category", "Source Domain"]],
     body: items.map((item, index) => [
       String(index + 1),
+      item.url,
       item.title || "Untitled article",
       item.category || "Uncategorized",
       item.domain || "-",
-      item.status,
     ]),
     styles: {
       font: "helvetica",
@@ -95,11 +69,11 @@ export async function downloadPdfReport(items: ReportItem[]) {
       fillColor: [250, 252, 255],
     },
     columnStyles: {
-      0: { cellWidth: 34, halign: "center" },
-      1: { cellWidth: 208 },
-      2: { cellWidth: 110 },
-      3: { cellWidth: 96 },
-      4: { cellWidth: 56, halign: "center" },
+      0: { cellWidth: 30, halign: "center" },
+      1: { cellWidth: 160 },
+      2: { cellWidth: 165 },
+      3: { cellWidth: 80 },
+      4: { cellWidth: 80 },
     },
     didDrawPage: () => {
       const page = doc.getCurrentPageInfo().pageNumber;
@@ -115,17 +89,11 @@ export async function downloadPdfReport(items: ReportItem[]) {
 export function downloadCsvReport(items: ReportItem[]) {
   const csv = Papa.unparse(
     items.map((item, index) => ({
-      "No": index + 1,
+      "No.": index + 1,
       "URL": item.url,
-      "Domain": item.domain,
       "Title": item.title,
       "Category": item.category,
-      "Description": item.description,
-      "Author": item.author,
-      "Published Time": item.publishedTime,
-      "Status": item.status,
-      "Error": item.error,
-      "Crawled At": item.crawledAt,
+      "Source Domain": item.domain,
     })),
   );
 
